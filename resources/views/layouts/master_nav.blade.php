@@ -169,13 +169,10 @@
         @endif
     </div>
 
-    {{-- Content Section --}}
+    <!-- {{-- Content Section --}}
     <div class="content flex-grow-1">
         @yield('content')
-    </div>
-
-    {{-- Footer --}}
-    @include('layouts.footer')
+    </div> -->
 
 </div>
 

@@ -29,8 +29,11 @@
     </style>
 
     @stack('styles')
+    <!-- @include('layouts.master_nav') -->
 </head>
 <body style="font-family: 'Poppins', sans-serif">
+
+    {{-- Main Wrapper --}}
 
     <div class="main-wrapper d-flex flex-column min-vh-100">
         @yield('content')
@@ -45,5 +48,7 @@
 
     @stack('scripts')
 
+    @include('layouts.footer')
 </body>
+
 </html>
