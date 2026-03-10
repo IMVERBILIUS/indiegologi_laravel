@@ -13,15 +13,19 @@ class ConsultationService extends Model
         'title',
         'price',
         'hourly_price',
+        'base_duration', // <-- TAMBAHKAN INI
         'status',
         'short_description',
         'product_description',
         'thumbnail',
+        'add_ons', // <-- TAMBAHKAN INI
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
         'hourly_price' => 'decimal:2',
+        'base_duration' => 'integer', // <-- TAMBAHKAN INI
+        'add_ons' => 'array', // <-- TAMBAHKAN INI
     ];
 
 
@@ -41,5 +45,35 @@ class ConsultationService extends Model
                         'offline_address'
                     )
                     ->withTimestamps();
+    }
+
+    /**
+     * Get the full URL for the service's thumbnail image.
+     *
+     * @return string
+     */
+    public function getThumbnailUrlAttribute()
+    {
+        if ($this->thumbnail) {
+            // If it's already a full URL, return as is
+            if (filter_var($this->thumbnail, FILTER_VALIDATE_URL)) {
+                return $this->thumbnail;
+            }
+            
+            // If it's already prefixed with 'storage/', use directly
+            if (str_starts_with($this->thumbnail, 'storage/')) {
+                return asset($this->thumbnail);
+            }
+            
+            // If it's a storage file path without 'storage/' prefix (e.g., 'service-thumbnails/...')
+            // Add storage/ prefix to make it accessible through the public symlink
+            if (str_starts_with($this->thumbnail, 'service-thumbnails/')) {
+                return asset('storage/' . $this->thumbnail);
+            }
+            
+            // For legacy paths, use directly
+            return asset($this->thumbnail);
+        }
+        return asset('assets/default-thumbnail.jpg');
     }
 }

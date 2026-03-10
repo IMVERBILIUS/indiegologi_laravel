@@ -185,8 +185,8 @@
                         <i class="fas fa-palette fs-2" style="color: var(--theme-primary);"></i>
                     </div>
                     <div>
-                        <h2 class="fs-3 fw-bold mb-1" style="color: var(--theme-primary);">Manajemen Sketsa</h2>
-                        <p class="text-muted mb-0">Kelola koleksi sketsa Anda di sini.</p>
+                        <h2 class="fs-3 fw-bold mb-1" style="color: var(--theme-primary);">Manajemen Painting</h2>
+                        <p class="text-muted mb-0">Kelola koleksi painting Anda di sini.</p>
                     </div>
                 </div>
             </div>
@@ -198,7 +198,7 @@
         <div class="col-md-12 add-button-container d-flex justify-content-end">
             <a href="{{ route('admin.sketches.create') }}" class="btn btn-sporty-primary d-flex align-items-center px-4 py-2">
                 <i class="fas fa-plus me-2"></i>
-                <span class="fw-semibold">Tambah Sketsa Baru</span>
+                <span class="fw-semibold">Tambah Painting Baru</span>
             </a>
         </div>
     </div>
@@ -217,7 +217,7 @@
                     <thead>
                         <tr>
                             <th class="py-3">Thumbnail</th>
-                            <th class="py-3">Judul Sketsa</th>
+                            <th class="py-3">Judul Painting</th>
                             <th class="py-3">Penulis</th>
                             <th class="py-3">Status</th>
                             <th class="py-3">Aksi</th>
@@ -321,44 +321,10 @@
                 @endforelse
             </div>
 
-            {{-- Custom Pagination --}}
-            @if($sketches->hasPages())
-                <div class="mt-4 d-flex justify-content-center">
-                    <nav aria-label="Sketch pagination">
-                        <ul class="pagination pagination-sm flex-wrap justify-content-center mb-0">
-                            {{-- Previous Page Link --}}
-                            <li class="page-item {{ $sketches->onFirstPage() ? 'disabled' : '' }}">
-                                <a class="page-link rounded-pill border-0" href="{{ $sketches->previousPageUrl() }}" rel="prev" style="color: var(--theme-primary); background-color: #e6eef7;">&laquo;</a>
-                            </li>
-
-                            {{-- Pagination Elements --}}
-                            @foreach ($elements as $element)
-                                @if (is_string($element))
-                                    <li class="page-item disabled"><span class="page-link rounded-pill border-0">{{ $element }}</span></li>
-                                @endif
-                                @if (is_array($element))
-                                    @foreach ($element as $page => $url)
-                                        @if ($page == $sketches->currentPage())
-                                            <li class="page-item active" aria-current="page">
-                                                <span class="page-link rounded-pill border-0" style="background-color: var(--theme-primary); border-color: var(--theme-primary);">{{ $page }}</span>
-                                            </li>
-                                        @else
-                                            <li class="page-item">
-                                                <a class="page-link rounded-pill border-0" href="{{ $url }}" style="color: var(--theme-primary); background-color: #e6eef7;">{{ $page }}</a>
-                                            </li>
-                                        @endif
-                                    @endforeach
-                                @endif
-                            @endforeach
-
-                            {{-- Next Page Link --}}
-                            <li class="page-item {{ $sketches->hasMorePages() ? '' : 'disabled' }}">
-                                <a class="page-link rounded-pill border-0" href="{{ $sketches->nextPageUrl() }}" rel="next" style="color: var(--theme-primary); background-color: #e6eef7;">&raquo;</a>
-                            </li>
-                        </ul>
-                    </nav>
-                </div>
-            @endif
+            {{-- Pagination --}}
+            <div class="mt-4 d-flex justify-content-center">
+                {{ $sketches->links() }}
+            </div>
 
         </div>
     </div>

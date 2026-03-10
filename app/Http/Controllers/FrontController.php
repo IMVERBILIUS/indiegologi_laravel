@@ -12,6 +12,7 @@ use App\Models\Invoice;
 use App\Models\Testimonial;
 use App\Models\FreeConsultationType;
 use App\Models\FreeConsultationSchedule;
+use App\Models\Event;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -28,30 +29,37 @@ class FrontController extends Controller
         $popular_articles = Article::where('status', 'published')->orderBy('views', 'desc')->take(6)->get();
         $latest_sketches = Sketch::where('status', 'published')->latest()->get();
         $services = ConsultationService::take(3)->get();
-        
+
         // Tambahkan data testimoni dari database
         $testimonials = Testimonial::active()
             ->ordered()
             ->get();
 
-        
-            
+
+
         // --- TAMBAHKAN KODE INI ---
         // Mengambil semua jenis konsultasi gratis yang statusnya 'active'
         // dan memuat relasi 'availableSchedules' secara efisien (Eager Loading).
         $freeConsultationTypes = FreeConsultationType::with('availableSchedules')
-                                    ->active() // Menggunakan scopeActive() dari model
-                                    ->get();
+            ->active() // Menggunakan scopeActive() dari model
+            ->get();
         // -------------------------
-            
+
+        $featured_event = Event::where('status', 'published')
+            ->where('event_date', '>=', now()->toDateString())
+            ->orderBy('event_date', 'asc')
+            ->orderBy('event_time', 'asc')
+            ->first();
+
         // --- UBAH BARIS RETURN ---
         return view('front.index', compact(
-            'latest_articles', 
-            'popular_articles', 
-            'latest_sketches', 
-            'services', 
+            'latest_articles',
+            'popular_articles',
+            'latest_sketches',
+            'services',
             'testimonials',
-            'freeConsultationTypes' // Tambahkan variabel baru ini
+            'freeConsultationTypes',
+            'featured_event'
         ));
     }
 
@@ -145,7 +153,7 @@ class FrontController extends Controller
     {
         $services = ConsultationService::whereIn('status', ['published', 'special'])->latest()->paginate(6);
         $referralCodes = ReferralCode::all();
-        
+
         // Get free consultation types with their available schedules
         $freeConsultationTypes = FreeConsultationType::active()
             ->with(['availableSchedules'])
@@ -161,7 +169,7 @@ class FrontController extends Controller
             }
         }
 
-        return view('front.services.index', compact('services', 'referralCodes', 'cartCount', 'freeConsultationTypes'));
+        return view('front.services.indexServices', compact('services', 'referralCodes', 'cartCount', 'freeConsultationTypes'));
     }
 
     public function contact()
@@ -243,7 +251,7 @@ class FrontController extends Controller
         }
 
         $typeId = $request->input('type_id');
-        
+
         $schedules = FreeConsultationSchedule::forType($typeId)
             ->available()
             ->future()
@@ -520,7 +528,6 @@ class FrontController extends Controller
                     'message' => 'Konsultasi gratis berhasil ditambahkan ke keranjang!',
                     'cart_count' => $cartCount
                 ]);
-
             } catch (\Exception $e) {
                 Log::error('Add new free consultation to cart failed: ' . $e->getMessage(), [
                     'user_id' => Auth::id(),
@@ -600,7 +607,6 @@ class FrontController extends Controller
                     'message' => 'Konsultasi gratis berhasil ditambahkan ke keranjang!',
                     'cart_count' => $cartCount
                 ]);
-
             } catch (\Exception $e) {
                 Log::error('Add free consultation to cart failed: ' . $e->getMessage(), [
                     'user_id' => Auth::id(),
@@ -639,18 +645,30 @@ class FrontController extends Controller
             $service = ConsultationService::find($validatedData['id']);
             $user = Auth::user();
 
+            // Pre-calculate discount from referral code (if any)
+            $discountAmount = 0;
+            if (!empty($validatedData['referral_code'])) {
+                $referralCodeModel = \App\Models\ReferralCode::where('code', $validatedData['referral_code'])->first();
+                if ($referralCodeModel && $referralCodeModel->isValid()) {
+                    $itemBasePrice = $service->price + (($service->hourly_price ?? 0) * (int)$validatedData['hours']);
+                    $discountAmount = $referralCodeModel->calculateDiscount($itemBasePrice);
+                }
+            }
+
             CartItem::updateOrCreate(
                 [
                     'user_id' => $user->id,
                     'service_id' => $service->id,
+                    'booked_date' => $validatedData['booked_date'],
+                    'booked_time' => $validatedData['booked_time'],
                 ],
                 [
                     'price' => $service->price,
+                    'original_price' => $service->price, // ← store base price for cart calculations
                     'hourly_price' => $service->hourly_price ?? 0,
+                    'discount_amount' => $discountAmount, // ← store pre-calculated discount
                     'quantity' => 1,
                     'hours' => (int)$validatedData['hours'],
-                    'booked_date' => $validatedData['booked_date'],
-                    'booked_time' => $validatedData['booked_time'],
                     'session_type' => $validatedData['session_type'],
                     'offline_address' => $validatedData['offline_address'] ?? null,
                     'contact_preference' => $validatedData['contact_preference'],
@@ -672,7 +690,6 @@ class FrontController extends Controller
                 'message' => 'Layanan berhasil ditambahkan ke keranjang!',
                 'cart_count' => $cartCount
             ]);
-
         } catch (\Exception $e) {
             Log::error('Add to cart failed: ' . $e->getMessage(), [
                 'user_id' => Auth::id(),
@@ -697,7 +714,7 @@ class FrontController extends Controller
         try {
             $user = Auth::user();
             $tempCartData = session('temp_cart', []);
-            
+
             if (empty($tempCartData)) {
                 return response()->json(['success' => true, 'message' => 'No temp cart to transfer']);
             }
@@ -712,7 +729,7 @@ class FrontController extends Controller
                         $existing = CartItem::where('user_id', $user->id)
                             ->where('service_id', 'free-consultation')
                             ->first();
-                        
+
                         if (!$existing) {
                             CartItem::create([
                                 'user_id' => $user->id,
@@ -739,14 +756,14 @@ class FrontController extends Controller
                                 [
                                     'user_id' => $user->id,
                                     'service_id' => $service->id,
+                                    'booked_date' => $itemData['booked_date'],
+                                    'booked_time' => $itemData['booked_time'],
                                 ],
                                 [
                                     'price' => $service->price,
                                     'hourly_price' => $service->hourly_price ?? 0,
                                     'quantity' => 1,
                                     'hours' => (int)($itemData['hours'] ?? 1),
-                                    'booked_date' => $itemData['booked_date'],
-                                    'booked_time' => $itemData['booked_time'],
                                     'session_type' => $itemData['session_type'],
                                     'offline_address' => $itemData['offline_address'] ?? null,
                                     'contact_preference' => $itemData['contact_preference'],
@@ -783,7 +800,6 @@ class FrontController extends Controller
                 'cart_count' => $cartCount,
                 'transferred_items' => $transferredCount
             ]);
-
         } catch (\Exception $e) {
             Log::error('Transfer temp cart failed: ' . $e->getMessage(), [
                 'user_id' => Auth::id()
@@ -800,22 +816,79 @@ class FrontController extends Controller
      */
     public function viewCart()
     {
-        if (Auth::check()) {
-            $userId = Auth::id();
-            $cartItems = CartItem::with(['service', 'referralCode', 'freeConsultationType', 'freeConsultationSchedule'])
-                                      ->where('user_id', $userId)
-                                      ->get();
-            $summary = $this->calculateSummary($cartItems->pluck('id')->toArray(), 'full_payment');
+        $user = Auth::user();
 
-            return view('front.cart.index', array_merge([
-                'cartItems' => $cartItems,
-            ], $summary));
+        if (!$user) {
+            // Guest users see empty cart with temp cart handling in JS
+            return view('front.cart.index', [
+                'cartItems' => collect([]),
+                'subtotal' => '0',
+                'totalDiscount' => '0',
+                'grandTotal' => '0',
+                'totalToPayNow' => '0'
+            ]);
         }
 
-        $cartItems = collect();
-        $summary = $this->formatSummary(0, 0, 0, 0);
+        $cartItems = CartItem::with(['service', 'referralCode', 'event', 'participantData'])
+            ->where('user_id', $user->id)
+            ->get();
 
-        return view('front.cart.index', compact('cartItems', 'summary'));
+        // ✅ Calculate summary correctly
+        $subtotal = 0;
+        $totalDiscount = 0;
+
+        foreach ($cartItems as $item) {
+            // Calculate subtotal BEFORE discount
+            $itemSubtotal = $item->calculateOriginalSubtotal();
+            $itemDiscount = $item->getDiscountAmount();
+
+            $subtotal += $itemSubtotal;
+            $totalDiscount += $itemDiscount;
+
+            Log::info('Cart item loaded', [
+                'item_id' => $item->id,
+                'item_type' => $item->item_type,
+                'is_event' => $item->isEvent(),
+                'original_price' => $item->original_price,
+                'participant_count' => $item->participant_count,
+                'hours' => $item->hours,
+                'hourly_price' => $item->hourly_price,
+                'discount_amount' => $item->discount_amount,
+                'item_subtotal' => $itemSubtotal,
+                'item_discount' => $itemDiscount
+            ]);
+        }
+
+        $grandTotal = $subtotal - $totalDiscount;
+        $totalToPayNow = $grandTotal; // Default to full payment
+
+        // Group cart items for grouped layout
+        $groupedItems = $cartItems->groupBy(function ($item) {
+            if ($item->isEvent()) {
+                return 'event_' . $item->event_id;
+            } elseif ($item->isNewFreeConsultation()) {
+                return 'free_' . $item->free_consultation_type_id;
+            } elseif ($item->isLegacyFreeConsultation()) {
+                return 'legacy_free';
+            } else {
+                return 'service_' . ($item->service_id ?? 'unknown');
+            }
+        });
+
+        Log::info('Cart view loaded', [
+            'user_id' => $user->id,
+            'item_count' => $cartItems->count(),
+            'grouped_count' => $groupedItems->count()
+        ]);
+
+        return view('front.cart.index', [
+            'cartItems' => $cartItems, // Keep for full list if needed
+            'groupedItems' => $groupedItems, // Added for grouped display
+            'subtotal' => number_format($subtotal, 0, ',', '.'),
+            'totalDiscount' => number_format($totalDiscount, 0, ',', '.'),
+            'grandTotal' => number_format($grandTotal, 0, ',', '.'),
+            'totalToPayNow' => number_format($totalToPayNow, 0, ',', '.')
+        ]);
     }
 
     /**
@@ -865,26 +938,26 @@ class FrontController extends Controller
         }
 
         $cartItem = CartItem::where('id', $request->id)
-                            ->where('user_id', Auth::id())
-                            ->first();
+            ->where('user_id', Auth::id())
+            ->first();
 
         if ($cartItem) {
             $itemTitle = $cartItem->service_title;
-            
+
             // If removing new free consultation, release the schedule slot
             if ($cartItem->isNewFreeConsultation() && $cartItem->freeConsultationSchedule) {
                 $cartItem->freeConsultationSchedule->decrementBooking();
             }
-            
+
             $cartItem->delete();
-            
+
             Log::info('Item removed from cart', [
                 'user_id' => Auth::id(),
                 'item_title' => $itemTitle,
                 'service_id' => $cartItem->service_id,
                 'free_consultation_type_id' => $cartItem->free_consultation_type_id
             ]);
-            
+
             return redirect()->back()->with('success', 'Layanan berhasil dihapus dari keranjang.');
         }
 
@@ -901,22 +974,38 @@ class FrontController extends Controller
             return $this->formatSummary(0, 0, 0, 0);
         }
 
-        $cartItems = CartItem::with('referralCode')
-                            ->whereIn('id', $itemIds)
-                            ->where('user_id', $userId)
-                            ->get();
+        $cartItems = CartItem::with(['referralCode', 'service', 'event'])
+            ->whereIn('id', $itemIds)
+            ->where('user_id', $userId)
+            ->get();
 
         $subtotal = 0.0;
         $totalDiscount = 0.0;
 
         foreach ($cartItems as $item) {
-            // Handle free consultation (both old and new)
-            if ($item->isFreeConsultation()) {
-                $subtotal += 0; // Free consultation has no cost
+            // ✅ FIX: Use methods instead of non-existent accessors
+            if ($item->isNewFreeConsultation() || $item->isLegacyFreeConsultation()) {
+                // Free consultation has no cost
+                $subtotal += 0;
                 $totalDiscount += 0;
             } else {
-                $subtotal += $item->item_subtotal;
-                $totalDiscount += $item->discount_amount;
+                // ✅ CRITICAL FIX: Use calculateOriginalSubtotal() method
+                $itemSubtotal = $item->calculateOriginalSubtotal();
+                $itemDiscount = $item->getDiscountAmount();
+
+                $subtotal += $itemSubtotal;
+                $totalDiscount += $itemDiscount;
+
+                Log::info('Cart summary item calculation', [
+                    'item_id' => $item->id,
+                    'item_type' => $item->item_type,
+                    'is_event' => $item->isEvent(),
+                    'original_price' => $item->original_price,
+                    'participant_count' => $item->participant_count,
+                    'hours' => $item->hours,
+                    'item_subtotal' => $itemSubtotal,
+                    'item_discount' => $itemDiscount
+                ]);
             }
         }
 
@@ -926,6 +1015,14 @@ class FrontController extends Controller
         if ($globalPaymentType == 'dp' && $grandTotal > 0) {
             $totalToPayNow = $grandTotal * 0.5;
         }
+
+        Log::info('Cart summary totals', [
+            'subtotal' => $subtotal,
+            'total_discount' => $totalDiscount,
+            'grand_total' => $grandTotal,
+            'payment_type' => $globalPaymentType,
+            'total_to_pay_now' => $totalToPayNow
+        ]);
 
         return $this->formatSummary($subtotal, $totalDiscount, $grandTotal, $totalToPayNow);
     }
@@ -943,9 +1040,9 @@ class FrontController extends Controller
             'success' => true,
         ];
     }
-    
+
     // --- [FUNGSI PENCARIAN BARU YANG TELAH DI-IMPROVE] ---
-    
+
     /**
      * Menyorot kata kunci dalam teks.
      */
@@ -965,55 +1062,55 @@ class FrontController extends Controller
         $request->validate([
             'query' => 'required|string|min:2',
         ]);
-    
+
         $query = $request->input('query');
-    
+
         // 1. Cari di model Article (Judul, Deskripsi, dan Penulis)
         $articles = Article::where('status', 'published')
             ->where(function ($q) use ($query) {
                 $q->where('title', 'like', "%{$query}%")
-                  ->orWhere('description', 'like', "%{$query}%")
-                  ->orWhere('author', 'like', "%{$query}%");
+                    ->orWhere('description', 'like', "%{$query}%")
+                    ->orWhere('author', 'like', "%{$query}%");
             })
             ->latest()
             ->get();
-    
+
         // 2. Cari di model Sketch (Judul, Konten, dan Penulis)
         $sketches = Sketch::where('status', 'published')
             ->where(function ($q) use ($query) {
                 $q->where('title', 'like', "%{$query}%")
-                  ->orWhere('content', 'like', "%{$query}%")
-                  ->orWhere('author', 'like', "%{$query}%");
+                    ->orWhere('content', 'like', "%{$query}%")
+                    ->orWhere('author', 'like', "%{$query}%");
             })
             ->latest()
             ->get();
-    
+
         // 3. Cari di model ConsultationService (Judul Layanan dan Deskripsi)
         $services = ConsultationService::whereIn('status', ['published', 'special'])
             ->where(function ($q) use ($query) {
                 $q->where('title', 'like', "%{$query}%")
-                  ->orWhere('short_description', 'like', "%{$query}%")
-                  ->orWhere('product_description', 'like', "%{$query}%");
+                    ->orWhere('short_description', 'like', "%{$query}%")
+                    ->orWhere('product_description', 'like', "%{$query}%");
             })
             ->latest()
             ->get();
-    
+
         // 4. Proses highlight untuk setiap hasil
         $articles->each(function ($item) use ($query) {
             $item->title = $this->highlightText($item->title, $query);
             $item->description = $this->highlightText(Str::limit(strip_tags($item->description), 150), $query);
         });
-    
+
         $sketches->each(function ($item) use ($query) {
             $item->title = $this->highlightText($item->title, $query);
             $item->content = $this->highlightText(Str::limit(strip_tags($item->content), 150), $query);
         });
-    
+
         $services->each(function ($item) use ($query) {
             $item->title = $this->highlightText($item->title, $query);
             $item->short_description = $this->highlightText($item->short_description, $query);
         });
-    
+
         // 5. Kirim semua hasil ke view
         return view('front.search.results', compact('query', 'articles', 'sketches', 'services'));
     }

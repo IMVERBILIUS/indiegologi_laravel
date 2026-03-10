@@ -1,36 +1,41 @@
 @extends('layouts.app')
 
-@section('title', 'Sketch Telling')
+@section('title', 'Painting Telling')
 
 @section('content')
+{{-- Iklan --}}
+    <x-floating-ads
+        topAdImage="assets/img/PROMOTION_WEBSITE.jpg"
+        topAdLink="#"
+        bottomAdImage="assets/img/KONSULTASI_GRATIS.jpg"
+        bottomAdLink="/layanan" />
+        
 <div class="sketch-telling-section">
     <div class="container">
         {{-- Title and description with fade-down animations --}}
-        <h1 class="section-title" data-aos="fade-down">Sketch Telling</h1>
+        <h1 class="section-title" data-aos="fade-down">Painting Telling</h1>
         <p class="section-description" data-aos="fade-down" data-aos-delay="150">Lihatlah kisah-kisah yang kami visualisasikan untuk inspirasi dan pemahaman yang
             lebih dalam tentang berbagai perjalanan hidup</p>
 
-        @if($sketches->isEmpty())
-        {{-- Message for no sketches with a zoom-in animation --}}
+    @if($sketches->isEmpty())
+    {{-- Message for no paintings with a zoom-in animation --}}
         <div class="text-center" data-aos="zoom-in">
-            <p class="lead text-muted">Belum ada sketsa yang tersedia saat ini.</p>
+              <p class="lead text-muted">Belum ada painting yang tersedia saat ini.</p>
         </div>
         @else
-        <div class="cards-grid">
+        <div id="sketch-list-wrapper" class="cards-grid">
             @foreach ($sketches as $sketch)
-            {{-- Each card has a fade-up animation with a staggered delay --}}
-            <div class="card" data-aos="fade-up" data-aos-delay="{{ ($loop->index % 3) * 150 }}">
-                <a href="{{ route('front.sketches.detail', ['sketch' => $sketch->slug]) }}">
-                    <img src="{{ asset('storage/' . $sketch->thumbnail) }}" class="card-image"
-                         alt="{{ $sketch->title }}">
+                {{-- Card gaya homepage --}}
+                <a href="{{ route('front.sketches.detail', ['sketch' => $sketch->slug]) }}" class="paint-card" data-aos="fade-up" data-aos-delay="{{ ($loop->index % 3) * 150 }}">
+                    <p class="sketch-card-header">Painting Telling</p>
+                    <div class="sketch-card-middle-content">
+                        <img src="{{ asset('storage/' . $sketch->thumbnail) }}" alt="{{ $sketch->title }}" class="sketch-circular-image">
+                        <p class="sketch-card-description">{{ Str::limit(strip_tags($sketch->content), 120) }}</p>
+                    </div>
+                    <div class="sketch-card-brand">
+                        <img src="{{ asset('assets/img/logo_revisi_2.png') }}" alt="Indiegologi Logo">
+                    </div>
                 </a>
-                <div class="card-content">
-                    <h3 class="card-title">{{ Str::limit($sketch->title, 50) }}</h3>
-                    <a href="{{ route('front.sketches.detail', ['sketch' => $sketch->slug]) }}" class="read-more">
-                        Lihat Detail <span class="arrow">›</span>
-                    </a>
-                </div>
-            </div>
             @endforeach
         </div>
 
@@ -69,73 +74,85 @@
     margin: 0 auto 50px auto;
     line-height: 1.6;
 }
-.cards-grid {
+ .cards-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 30px;
     justify-content: center;
     padding-bottom: 50px;
 }
-.card {
-    background-color: #fff;
-    border-radius: 10px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-    overflow: hidden;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+/* Kartu bergaya sama seperti homepage */
+#sketch-list-wrapper .paint-card {
+    position: relative;
     display: flex;
     flex-direction: column;
-}
-.card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-}
-.card-image {
+    text-decoration: none;
+    color: inherit;
     width: 100%;
-    height: 200px;
+    min-height: 480px;
+    padding: 25px;
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+#sketch-list-wrapper .paint-card:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+#sketch-list-wrapper .sketch-card-header {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #0C2C5A;
+    margin: 0 0 16px 0;
+    text-align: center;
+}
+
+#sketch-list-wrapper .sketch-card-middle-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+#sketch-list-wrapper .sketch-circular-image {
+    width: 190px;
+    height: 190px;
+    border-radius: 50%;
     object-fit: cover;
     display: block;
-    border-top-left-radius: 10px;
-    border-top-right-radius: 10px;
+    margin: 12px auto 18px auto;
+    -webkit-mask-image: radial-gradient(circle at center, rgba(0,0,0,1) 70%, rgba(0,0,0,0.6) 80%, rgba(0,0,0,0) 88%);
+    mask-image: radial-gradient(circle at center, rgba(0,0,0,1) 70%, rgba(0,0,0,0.6) 80%, rgba(0,0,0,0) 88%);
+    filter: drop-shadow(0 8px 16px rgba(0,0,0,0.12));
 }
-.card-content {
-    padding: 20px;
-    text-align: left;
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+
+#sketch-list-wrapper .sketch-card-description {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    color: #555;
+    line-height: 1.6;
+    width: 90%;
+    margin-top: 10px;
+    margin-bottom: 5px;
 }
-.card-title {
-    font-size: 1.3rem;
-    font-weight: 600;
-    color: #0C2C5A;
-    margin-top: 0;
-    margin-bottom: 15px;
-    line-height: 1.4;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.read-more {
-    display: flex;
-    align-items: center;
-    color: #0C2C5A;
-    font-weight: 600;
-    text-decoration: none;
+
+#sketch-list-wrapper .sketch-card-brand {
     margin-top: auto;
+    padding-bottom: 10px;
+    text-align: center;
 }
-.read-more .arrow {
-    margin-left: 5px;
-    font-size: 1.2rem;
-    transition: transform 0.3s ease;
-}
-.read-more:hover .arrow {
-    transform: translateX(5px);
-}
-.read-more:hover {
-    text-decoration: underline;
+
+#sketch-list-wrapper .sketch-card-brand img {
+    max-height: 50px;
+    width: auto;
+    object-fit: contain;
+    filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.35));
 }
 
 @media (max-width: 992px) {
@@ -147,9 +164,6 @@
     }
     .section-description {
         font-size: 1rem;
-    }
-    .card-title {
-        font-size: 1.2rem;
     }
 }
 @media (max-width: 768px) {

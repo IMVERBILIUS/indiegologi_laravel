@@ -8,6 +8,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="{{ asset('favicon/favicon-light.png') }}" media="(prefers-color-scheme: light)" type="image/png">
+    <link rel="icon" href="{{ asset('favicon/favicon-dark.png') }}" media="(prefers-color-scheme: dark)" type="image/png">
     <style>
         /* Indiegologi Brand Colors */
         :root {
@@ -251,7 +253,7 @@
                             <i class="fas fa-heart logo-icon"></i>
                         </div>
                         <h1 class="h3 fw-bold mb-1">Selamat Datang di Indiegologi</h1>
-                        <p class="text-muted mb-0">Masuk ke akun Anda dan <strong>mulai kembangkan ide brilian</strong>!</p>
+                        <p class="text-muted mb-0">Masuk ke akun Anda dan <strong style="color: red;">mulai kembangkan ide brilian</strong>!</p>
                     </div>
 
                     <!-- Cart notification (will be shown by JavaScript if cart has items) -->
@@ -274,7 +276,7 @@
 
                     <form method="POST" action="{{ route('login') }}" id="login-form">
                         @csrf
-                        <input type="hidden" name="temp_cart_data" id="temp-cart-input">
+                        <input type="hidden" name="temp_cart_data" id="temp-cart-input" class="temp-cart-input">
 
                         <div class="mb-3 animate-item delay-2">
                             <label for="email" class="form-label">Email</label>
@@ -317,16 +319,25 @@
                                 </span>
                             </button>
                         </div>
-                        
-                        <div class="text-center text-muted mb-4 animate-item delay-5">
-                            Belum punya akun?
-                            <a href="{{ route('register') }}" class="text-decoration-none fw-medium text-primary">Daftar di sini</a>
-                        </div>
+                    </form>
 
-                        <div class="text-center animate-item delay-6">
-                            <p class="text-muted mb-3">Atau masuk dengan</p>
-                            <div class="social-login">
-                                <a href="{{ route('auth.google') }}" class="d-flex align-items-center justify-content-center text-decoration-none">
+                    <div class="text-center text-muted mb-4 animate-item delay-5">
+                        Belum punya akun?
+                        <a href="{{ route('register') }}" class="text-decoration-none fw-medium text-primary">Daftar di sini</a>
+                    </div>
+
+                    <div class="d-flex align-items-center mb-4 animate-item delay-6">
+                        <hr class="flex-grow-1">
+                        <span class="px-3 text-muted small">atau masuk dengan</span>
+                        <hr class="flex-grow-1">
+                    </div>
+
+                    <div class="animate-item delay-6">
+                        <div class="social-login">
+                            <form action="{{ route('auth.google.redirect') }}" method="POST" id="google-login-form">
+                                @csrf
+                                <input type="hidden" name="temp_cart_data" class="temp-cart-input">
+                                <button type="submit" class="btn btn-link d-flex align-items-center justify-content-center text-decoration-none w-100 p-0 border-0" style="background: none;">
                                     <svg class="social-icon" viewBox="0 0 24 24">
                                         <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
                                         <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -334,10 +345,11 @@
                                         <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
                                     </svg>
                                     <span class="ms-2">Google</span>
-                                </a>
-                            </div>
+                                </button>
+                            </form>
                         </div>
-                    </form>
+                    </div>
+
                     <div class="text-center mt-3 animate-item delay-7">
                         <a href="{{ route('front.index') }}" class="btn btn-back w-100">
                             <i class="fas fa-arrow-left me-2"></i> Kembali ke Beranda
@@ -459,6 +471,20 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Handle form submission with enhanced temp cart support
+    const googleLoginForm = document.getElementById('google-login-form');
+
+    function populateCartInputs() {
+        const tempCart = getTempCart();
+        if (Object.keys(tempCart).length > 0) {
+            const tempCartData = JSON.stringify(tempCart);
+            document.querySelectorAll('.temp-cart-input').forEach(input => {
+                input.value = tempCartData;
+            });
+            return true;
+        }
+        return false;
+    }
+
     if (loginForm) {
         loginForm.addEventListener('submit', function(event) {
             // Show loading state
@@ -466,33 +492,7 @@ document.addEventListener('DOMContentLoaded', function() {
             loginText.classList.add('d-none');
             loginLoading.classList.remove('d-none');
             
-            // Get temp cart data from localStorage
-            const tempCart = getTempCart();
-            
-            if (Object.keys(tempCart).length > 0) {
-                try {
-                    const analysis = analyzeTempCart();
-                    
-                    if (analysis.total > 0) {
-                        // Set temp cart data to hidden input
-                        const tempCartInput = document.getElementById('temp-cart-input');
-                        tempCartInput.value = JSON.stringify(tempCart);
-                        
-                        console.log(`Preparing to transfer ${analysis.total} items from temp cart:`, analysis);
-                        
-                        // Enhanced logging for free consultation items
-                        analysis.details.forEach(detail => {
-                            if (detail.type === 'new_free_consultation') {
-                                console.log(`New free consultation detected - Type ID: ${detail.type_id}, Schedule ID: ${detail.schedule_id}`);
-                            } else if (detail.type === 'legacy_free_consultation') {
-                                console.log('Legacy free consultation detected');
-                            }
-                        });
-                    }
-                } catch (error) {
-                    console.error('Error processing temp cart data:', error);
-                }
-            }
+            populateCartInputs();
 
             // Reset loading state after 10 seconds (fallback)
             setTimeout(() => {
@@ -502,6 +502,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     loginLoading.classList.add('d-none');
                 }
             }, 10000);
+        });
+    }
+
+    if (googleLoginForm) {
+        googleLoginForm.addEventListener('submit', function() {
+            populateCartInputs();
         });
     }
 

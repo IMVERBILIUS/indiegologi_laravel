@@ -13,22 +13,22 @@
 
 {{-- CSS Kustom untuk Halaman Detail --}}
 <style>
-    .sketch-detail-container {
+    .painting-detail-container {
         max-width: 800px;
         margin: auto;
     }
-    .sketch-title {
+    .painting-title {
         font-family: 'Playfair Display', serif;
         font-size: 2.8rem;
         font-weight: 700;
         color: #0C2C5A;
         line-height: 1.3;
     }
-    .sketch-meta-info {
+    .painting-meta-info, .sketch-meta-info {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: 20px;
+        gap: 12px; /* jarak kecil antara item (tanggal dan status) */
         padding: 15px 0;
         margin: 20px 0;
         border-top: 1px solid #e0e0e0;
@@ -69,6 +69,20 @@
         line-height: 1.8;
         color: #343a40;
     }
+    .sketch-image-wrapper {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        background-color: #f8f9fa;
+        border-radius: 16px;
+        overflow: hidden;
+    }
+    .sketch-image-wrapper img {
+        max-width: 100%;
+        height: auto;
+        max-height: 700px;
+        object-fit: contain;
+    }
 </style>
 @endpush
 
@@ -84,15 +98,11 @@
             </a>
         </div>
 
-        {{-- Judul Sketsa --}}
-        <h1 class="sketch-title mt-4" data-aos="fade-up">{{ $sketch->title }}</h1>
+        {{-- Judul Painting --}}
+        <h1 class="painting-title mt-4" data-aos="fade-up">{{ $sketch->title }}</h1>
 
-        {{-- Meta Info (Penulis, Tanggal, Status) --}}
+        {{-- Meta Info (Tanggal, Status) --}}
         <div class="sketch-meta-info" data-aos="fade-up" data-aos-delay="100">
-            <div class="meta-item">
-                <i class="fas fa-user-edit"></i>
-                <span>Oleh: <strong>{{ $sketch->author ?? 'Unknown' }}</strong></span>
-            </div>
             <div class="meta-item">
                 <i class="fas fa-calendar-alt"></i>
                 <span>{{ $sketch->created_at->format('d F Y') }}</span>
@@ -102,11 +112,14 @@
             </div>
         </div>
 
-        {{-- Gambar Sketsa --}}
-        <img src="{{ asset('storage/' . $sketch->thumbnail) }}" alt="{{ $sketch->title }}" class="img-fluid rounded-4 shadow-sm my-4"
-             style="width: 100%; max-height: 500px; object-fit: cover;" data-aos="zoom-in-up" data-aos-delay="200">
+    {{-- Gambar Painting --}}
+    <div class="sketch-image-wrapper my-4" 
+    data-aos="zoom-in-up" 
+    data-aos-delay="200">
+        <img src="{{ asset('storage/' . $sketch->thumbnail) }}" alt="{{ $sketch->title }}" class="img-fluid rounded-4 shadow-sm">
+    </div>
 
-        {{-- Konten Artikel --}}
+        {{-- Konten Painting --}}
         <div class="article-content" data-aos="fade-up" data-aos-delay="300">
             <p>{{ $sketch->content }}</p>
         </div>

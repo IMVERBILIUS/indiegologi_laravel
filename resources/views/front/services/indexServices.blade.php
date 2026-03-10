@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="{{ asset('css/service-details.css') }}">
     <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
     <style>
-        @keyframes fadeInUp{from{opacity:0;transform:translate3d(0,20px,0)}to{opacity:1;transform:translate3d(0,0,0)}}.stagger-item{opacity:0}.accordion-collapse.show .stagger-item{animation:fadeInUp .5s ease-out forwards}.accordion-collapse.show .stagger-item:nth-child(1){animation-delay:.05s}.accordion-collapse.show .stagger-item:nth-child(2){animation-delay:.1s}.accordion-collapse.show .stagger-item:nth-child(3){animation-delay:.15s}.accordion-collapse.show .stagger-item:nth-child(4){animation-delay:.2s}.accordion-collapse.show .stagger-item:nth-child(5){animation-delay:.25s}
+        @keyframes fadeInUp{from{opacity:0;transform:translate3d(0,20px,0)}to{opacity:1;transform:translate3d(0,0,0)}}.stagger-item{opacity:0}.accordion-collapse.show .stagger-item{animation:fadeInUp .5s ease-out forwards}.accordion-collapse.show .stagger-item:nth-child(1){animation-delay:.05s}.accordion-collapse.show .stagger-item:nth-child(2){animation-delay:.1s}.accordion-collapse.show .stagger-item:nth-child(3){animation-delay:.15s}.accordion-collapse.show .stagger-item:nth-child(4){animation-delay:.2s}.accordion-collapse.show .stagger-item:nth-child(5){animation-delay:.25s}.accordion-collapse.show .stagger-item:nth-child(6){animation-delay:.3s} /* Ditambah untuk stagger item baru */
 
         /* Styling khusus untuk konsultasi gratis - highlight effect */
         .free-consultation-highlight {
@@ -146,10 +146,58 @@
 
             .accordion-button .service-header-mobile{display:flex;flex-direction:column;align-items:flex-start;width:100%}.accordion-button .service-header-mobile-top{display:flex;justify-content:space-between;align-items:flex-start;width:100%}.accordion-button .service-header-mobile .service-thumbnail-mobile{width:100%;height:150px;object-fit:cover;border-radius:8px;margin-bottom:1rem}.accordion-button h5{font-size:1.1rem}.accordion-button p{font-size:.85rem}.btn-details-toggle{font-size:0;width:40px;height:40px;padding:0;border-radius:50%;background-color:#f1f3f5;color:var(--indiegologi-primary);display:flex;align-items:center;justify-content:center;border:none;flex-shrink:0}.btn-details-toggle::after{content:'\F285';font-family:'bootstrap-icons';font-size:1rem;transition:transform .3s ease}.accordion-button:not(.collapsed) .btn-details-toggle::after{transform:rotate(90deg)}
         }
+
+        /* CSS untuk Add-On Repeater */
+        .selected-addon-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f1f3f5;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            border: 1px solid #dee2e6;
+        }
+        .selected-addon-item .addon-details {
+            display: flex;
+            flex-direction: column;
+            /* (MODIFIKASI) Beri ruang untuk input qty */
+            flex-grow: 1;
+            margin-right: 0.5rem;
+        }
+        .selected-addon-item .addon-name {
+            font-weight: 500;
+        }
+        .selected-addon-item .addon-price {
+            color: #6c757d;
+            font-size: 0.85rem;
+        }
+        .btn-remove-addon {
+            border: none;
+            background: none;
+            color: #dc3545;
+            font-weight: bold;
+            font-size: 1.2rem;
+            padding: 0 0.25rem;
+            line-height: 1;
+            /* (MODIFIKASI) Beri sedikit jarak */
+            margin-left: 0.5rem;
+        }
+        .btn-remove-addon:hover {
+            color: #a71d2a;
+        }
     </style>
 @endpush
 
 @section('content')
+    {{-- Iklan --}}
+    <x-floating-ads
+        topAdImage="assets/img/PROMOTION_WEBSITE.jpg"
+        topAdLink="#"
+        bottomAdImage="assets/img/KONSULTASI_GRATIS.jpg"
+        bottomAdLink="/layanan" />
+
     <div class="service-details-page">
         <section class="container container-title mb-5" data-aos="fade-down">
             <div class="row">
@@ -190,14 +238,15 @@
                                         </div>
                                     </h2>
                                     <div id="collapse-free-consultation" class="accordion-collapse collapse" data-bs-parent="#freeServiceAccordion">
-                                        <div class="accordion-body p-4">
+                                        <div class="accordion-body p-4 rounded-4">
                                             <div class="service-block" data-service-id="new-free-consultation">
 
                                                 <div class="stagger-item">
                                                     <div class="row mb-4">
                                                         <div class="col-12">
                                                             <h6 class="fw-bold mb-3">Pilih Jenis Konsultasi Gratis:</h6>
-                                                            @forelse($freeConsultationTypes as $type)
+
+                                                            @forelse($freeConsultationTypes ?? [] as $type)
                                                                 <div class="consultation-type-dropdown" data-type-id="{{ $type->id }}">
                                                                     <div class="form-check">
                                                                         <input class="form-check-input consultation-type-radio" type="radio" name="free_consultation_type" id="type-{{ $type->id }}" value="{{ $type->id }}">
@@ -211,7 +260,8 @@
                                                                     <div class="schedule-options" id="schedule-options-{{ $type->id }}">
                                                                         <h6 class="fw-bold mb-2">Pilih Jadwal:</h6>
                                                                         <div class="schedule-list" data-type-id="{{ $type->id }}">
-                                                                            @foreach($type->availableSchedules as $schedule)
+
+                                                                            @foreach($type->availableSchedules ?? [] as $schedule)
                                                                                 <div class="schedule-card" data-schedule-id="{{ $schedule->id }}">
                                                                                     <input type="radio" name="free_consultation_schedule" value="{{ $schedule->id }}" class="schedule-radio" data-type-id="{{ $type->id }}" data-date="{{ $schedule->scheduled_date }}" data-time="{{ $schedule->scheduled_time->format('H:i') }}">
                                                                                     <strong>{{ $schedule->formatted_date }}</strong> - {{ $schedule->formatted_time }}
@@ -252,14 +302,22 @@
                                                     <div class="form-section contact-options mb-4" id="contact-form-section" style="display: none;">
                                                         <div class="col-12">
                                                             <h6 class="fw-bold">Saya bersedia dihubungi via:</h6>
+
+                                                            {{-- =================================== --}}
+                                                            {{-- (MODIFIKASI) Penambahan ID dan FOR --}}
+                                                            {{-- =================================== --}}
                                                             <div class="form-check mb-2">
-                                                                <input class="form-check-input" type="radio" name="contact_preference-new-free-consultation" value="chat_and_call" checked>
-                                                                <label class="form-check-label">Telepon & WhatsApp</label>
+                                                                <input class="form-check-input" type="radio" name="contact_preference-new-free-consultation" value="chat_and_call" checked id="contact-chat-call-free">
+                                                                <label class="form-check-label" for="contact-chat-call-free">Telepon & WhatsApp</label>
                                                             </div>
                                                             <div class="form-check">
-                                                                <input class="form-check-input" type="radio" name="contact_preference-new-free-consultation" value="chat_only">
-                                                                <label class="form-check-label">Hanya WhatsApp</label>
+                                                                <input class="form-check-input" type="radio" name="contact_preference-new-free-consultation" value="chat_only" id="contact-chat-only-free">
+                                                                <label class="form-check-label" for="contact-chat-only-free">Hanya WhatsApp</label>
                                                             </div>
+                                                            {{-- =================================== --}}
+                                                            {{-- AKHIR MODIFIKASI --}}
+                                                            {{-- =================================== --}}
+
                                                         </div>
                                                     </div>
                                                 </div>
@@ -296,21 +354,34 @@
                             <div class="accordion-item mb-3 rounded-4 shadow-sm" data-aos="fade-up" data-aos-duration="800">
                                 <h2 class="accordion-header" id="heading-{{ $service->id }}">
                                     <div class="accordion-button collapsed rounded-4" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ $service->id }}">
+                                        {{-- =================================== --}}
+                                        {{-- (MODIFIKASI) TAMPILAN DESKTOP --}}
+                                        {{-- =================================== --}}
                                         <div class="d-none d-md-flex justify-content-between align-items-center w-100">
                                             <div class="d-flex align-items-center">
                                                 <img src="{{ asset('storage/' . $service->thumbnail) }}" alt="{{ $service->title }}" class="rounded-3 me-3" style="width:100px;height:100px;object-fit:cover">
                                                 <div>
-                                                    <h5 class="fw-bold mb-1">{{ $service->title }}</h5>
+                                                    <h5 class="fw-bold mb-1">
+                                                        {{ $service->title }}
+                                                        {{-- (MODIFIKASI) Hapus text-muted --}}
+                                                        <span class="ms-2 fw-normal fs-6">({{ $service->base_duration ?? 1 }} {{ Str::plural('Hour', $service->base_duration ?? 1) }} Packet)</span>
+                                                    </h5>
                                                     <p class="text-muted mb-0">{{ Str::limit($service->short_description, 70) }}</p>
                                                 </div>
                                             </div>
                                             <button class="btn-details-toggle" type="button">Baca Selengkapnya</button>
                                         </div>
+
+                                        {{-- =================================== --}}
+                                        {{-- (MODIFIKASI) TAMPILAN MOBILE --}}
+                                        {{-- =================================== --}}
                                         <div class="d-flex d-md-none service-header-mobile">
                                             <img src="{{ asset('storage/' . $service->thumbnail) }}" alt="{{ $service->title }}" class="service-thumbnail-mobile">
                                             <div class="service-header-mobile-top">
                                                 <div>
                                                     <h5 class="fw-bold mb-1">{{ $service->title }}</h5>
+                                                    {{-- (MODIFIKASI) Hapus text-muted --}}
+                                                    <span class="fw-normal d-block mb-1" style="font-size: 0.9rem;">({{ $service->base_duration ?? 1 }} {{ Str::plural('Hour', $service->base_duration ?? 1) }} Packet)</span>
                                                     <p class="text-muted mb-0">{{ Str::limit($service->short_description, 45) }}</p>
                                                 </div>
                                                 <button class="btn-details-toggle" type="button"></button>
@@ -319,8 +390,15 @@
                                     </div>
                                 </h2>
                                 <div id="collapse-{{ $service->id }}" class="accordion-collapse collapse" data-bs-parent="#servicesAccordion">
-                                    <div class="accordion-body p-4">
-                                        <div class="service-block" data-service-id="{{ $service->id }}">
+                                    <div class="accordion-body p-4 rounded-4">
+
+                                        {{-- Data untuk JS --}}
+                                        <div class="service-block"
+                                             data-service-id="{{ $service->id }}"
+                                             data-base-price="{{ $service->price }}"
+                                             data-base-duration="{{ $service->base_duration ?? 1 }}"
+                                             data-hourly-price="{{ $service->hourly_price ?? $service->price }}">
+
                                             <div class="stagger-item">
                                                 <div class="row mb-4">
                                                     <div class="col-12">
@@ -330,13 +408,20 @@
                                                 </div>
                                             </div>
 
+                                            {{-- ======================================================= --}}
+                                            {{-- (MODIFIKASI) BACKGROUND GABUNGAN & LAYOUT COL-LG-4 --}}
+                                            {{-- ======================================================= --}}
                                             <div class="stagger-item">
+                                                {{-- Satu background 'form-section' untuk semua --}}
                                                 <div class="form-section mb-4">
+
+                                                    {{-- Bagian 1: Jadwal --}}
                                                     <div class="row">
                                                         <div class="col-12 mb-3">
                                                             <h6 class="fw-bold">Pilih Jadwal:</h6>
                                                             <small class="text-muted">(Pemesanan minimal H-1)</small>
                                                         </div>
+                                                        {{-- Row 1: Tanggal, Jam Mulai, Jam Berakhir --}}
                                                         <div class="col-lg-4 col-md-12">
                                                             <div class="mb-3">
                                                                 <label class="form-label">Tanggal:</label>
@@ -351,11 +436,25 @@
                                                         </div>
                                                         <div class="col-lg-4 col-md-12">
                                                             <div class="mb-3">
-                                                                <label class="form-label">Jumlah Jam</label>
-                                                                <input type="number" class="form-control hours-input" value="1" min="1" required>
+                                                                <label class="form-label">Jam Berakhir:</label>
+                                                                <input type="time" class="form-control booked_time_end-input" readonly disabled style="background-color: #e9ecef;">
                                                             </div>
                                                         </div>
-                                                        <div class="col-12">
+
+                                                        {{-- Row 2: Add-On Durasi, Pilihan Sesi --}}
+                                                        <div class="col-lg-4 col-md-12"> {{-- (MODIFIKASI) Diubah ke col-lg-4 --}}
+                                                            <div class="mb-3">
+                                                                <label class="form-label">Add-On (Durasi Tambahan):</label>
+                                                                <div class="input-group">
+                                                                    <input type="number" class="form-control hours-input"
+                                                                           value="0"
+                                                                           min="0"
+                                                                           required style="text-align: center;">
+                                                                    <span class="input-group-text">jam</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-lg-4 col-md-12"> {{-- (MODIFIKASI) Diubah ke col-lg-4 --}}
                                                             <div class="mb-3">
                                                                 <label class="form-label">Pilihan Sesi</label>
                                                                 <select class="form-select session-type-select">
@@ -363,27 +462,135 @@
                                                                     <option value="Offline">Offline</option>
                                                                 </select>
                                                             </div>
+                                                        </div>
+                                                        {{-- Sisa col-lg-4 biarkan kosong --}}
+
+                                                        {{-- Row 3: Alamat Offline (Toggled) --}}
+                                                        <div class="col-12">
                                                             <div class="mb-3 offline-address-container" style="display:none;">
                                                                 <label class="form-label">Alamat untuk Sesi Offline:</label>
                                                                 <textarea class="form-control" placeholder="Masukkan alamat lengkap untuk sesi offline" rows="3"></textarea>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                </div>
-                                            </div>
+                                                    </div> {{-- PHP untuk memisahkan add-on --}}
+                                                    @php
+                                                        $serviceAddons = [];
+                                                        $paintingAddons = [];
+
+                                                        foreach($service->add_ons ?? [] as $i => $addon) {
+                                                            $addonName = '';
+                                                            $addonPrice = 0;
+                                                            $addonId = null;
+                                                            $isPainting = false;
+
+                                                            if ($addon['type'] == 'custom') {
+                                                                $addonName = $addon['title'];
+                                                                $addonPrice = $addon['price'];
+                                                                $addonId = 'custom_' . $i;
+
+                                                                if (isset($addon['title']) && strpos($addon['title'], 'Painting:') === 0) {
+                                                                    $isPainting = true;
+                                                                }
+
+                                                            } elseif ($addon['type'] == 'existing' && !empty($addon['service_id'])) {
+                                                                $relatedService = $services->firstWhere('id', $addon['service_id']);
+                                                                if ($relatedService) {
+                                                                    $addonName = $relatedService->title . ' (Layanan)';
+                                                                    $addonPrice = $relatedService->price;
+                                                                    $addonId = $relatedService->id;
+                                                                }
+                                                            }
+
+                                                            if ($addonId) {
+                                                                $data = [
+                                                                    'id' => $addonId,
+                                                                    'name' => $addonName,
+                                                                    'price' => $addonPrice,
+                                                                    'price_formatted' => 'Rp. ' . number_format($addonPrice, 0, ',', '.')
+                                                                ];
+
+                                                                if ($isPainting) {
+                                                                    $paintingAddons[] = $data;
+                                                                } else {
+                                                                    $serviceAddons[] = $data;
+                                                                }
+                                                            }
+                                                        }
+                                                    @endphp
+
+                                                    <hr class="my-4"> {{-- Bagian 2: Add-on Layanan --}}
+                                                    <h6 class="fw-bold mb-3">Add-On (Layanan):</h6>
+                                                    @if(!empty($serviceAddons))
+                                                        <div class="selected-addons-container mb-2" id="selected-service-addons-{{ $service->id }}">
+                                                            {{-- Item yang dipilih akan muncul di sini (via JS) --}}
+                                                        </div>
+                                                        <div class="input-group addon-controls">
+                                                            <select class="form-select addon-dropdown" id="service-addon-dropdown-{{ $service->id }}">
+                                                                <option value="">Pilih tambahan layanan...</option>
+                                                                @foreach($serviceAddons as $addon)
+                                                                    <option value="{{ $addon['id'] }}" data-price="{{ $addon['price'] }}" data-name="{{ $addon['name'] }}">
+                                                                        {{ $addon['name'] }} (+{{ $addon['price_formatted'] }})
+                                                                    </option>
+                                                                @endforeach
+                                                            </select>
+                                                            <button class="btn btn-primary btn-add-addon" type="button" data-service-id="{{ $service->id }}" data-type="service">
+                                                                <i class="fas fa-plus"></i>&nbsp;Tambah
+                                                            </button>
+                                                        </div>
+                                                    @else
+                                                        <p class="text-muted small">Tidak ada layanan tambahan untuk paket ini.</p>
+                                                    @endif
+
+                                                    <hr class="my-4"> {{-- Bagian 3: Add-on Painting --}}
+                                                    <h6 class="fw-bold mb-3">Add-On (Painting Character):</h6>
+                                                    @if(!empty($paintingAddons))
+                                                        <div class="selected-addons-container mb-2" id="selected-painting-addons-{{ $service->id }}">
+                                                            {{-- Item yang dipilih akan muncul di sini (via JS) --}}
+                                                        </div>
+                                                        <div class="input-group addon-controls">
+                                                            <select class="form-select addon-dropdown" id="painting-addon-dropdown-{{ $service->id }}">
+                                                                <option value="">Pilih tambahan painting...</option>
+                                                                @foreach($paintingAddons as $addon)
+                                                                    <option value="{{ $addon['id'] }}" data-price="{{ $addon['price'] }}" data-name="{{ $addon['name'] }}">
+                                                                        {{ $addon['name'] }} (+{{ $addon['price_formatted'] }})
+                                                                    </option>
+                                                                @endforeach
+                                                            </select>
+                                                            <button class="btn btn-primary btn-add-addon" type="button" data-service-id="{{ $service->id }}" data-type="painting">
+                                                                <i class="fas fa-plus"></i>&nbsp;Tambah
+                                                            </button>
+                                                        </div>
+                                                    @else
+                                                        <p class="text-muted small">Tidak ada opsi painting untuk paket ini.</p>
+                                                    @endif
+
+                                                </div> {{-- Akhir dari .form-section gabungan --}}
+                                            </div> {{-- Akhir dari .stagger-item gabungan --}}
+                                            {{-- ======================================================= --}}
+                                            {{-- AKHIR MODIFIKASI BACKGROUND GABUNGAN --}}
+                                            {{-- ======================================================= --}}
+
 
                                             <div class="stagger-item">
                                                 <div class="form-section contact-options mb-4">
                                                     <div class="col-12">
                                                         <h6 class="fw-bold">Saya bersedia dihubungi via:</h6>
+
+                                                        {{-- =================================== --}}
+                                                        {{-- (MODIFIKASI) Penambahan ID dan FOR --}}
+                                                        {{-- =================================== --}}
                                                         <div class="form-check mb-2">
-                                                            <input class="form-check-input" type="radio" name="contact_preference-{{ $service->id }}" value="chat_and_call" checked>
-                                                            <label class="form-check-label">Telepon & WhatsApp</label>
+                                                            <input class="form-check-input" type="radio" name="contact_preference-{{ $service->id }}" value="chat_and_call" checked id="contact-chat-call-{{ $service->id }}">
+                                                            <label class="form-check-label" for="contact-chat-call-{{ $service->id }}">Telepon & WhatsApp</label>
                                                         </div>
                                                         <div class="form-check">
-                                                            <input class="form-check-input" type="radio" name="contact_preference-{{ $service->id }}" value="chat_only">
-                                                            <label class="form-check-label">Hanya WhatsApp</label>
+                                                            <input class="form-check-input" type="radio" name="contact_preference-{{ $service->id }}" value="chat_only" id="contact-chat-only-{{ $service->id }}">
+                                                            <label class="form-check-label" for="contact-chat-only-{{ $service->id }}">Hanya WhatsApp</label>
                                                         </div>
+                                                        {{-- =================================== --}}
+                                                        {{-- AKHIR MODIFIKASI --}}
+                                                        {{-- =================================== --}}
+
                                                     </div>
                                                 </div>
                                             </div>
@@ -396,7 +603,9 @@
                                                 <div class="row justify-content-between align-items-start mb-3">
                                                     <div class="col-auto">
                                                         <div class="final-price-display">
-                                                            <span class="final-price">Rp. {{ number_format($service->price, 0, ',', '.') }}</span>
+                                                            <span class="final-price" data-base-price="{{ $service->price }}">
+                                                                Rp. {{ number_format($service->price, 0, ',', '.') }}
+                                                            </span>
                                                         </div>
                                                     </div>
                                                     <div class="col-auto">
@@ -411,6 +620,7 @@
                                                         <input type="text" class="form-control referral-code-input" placeholder="Masukkan kode referral">
                                                         <button class="btn apply-referral-btn" type="button" data-service-id="{{ $service->id }}">Apply</button>
                                                     </div>
+                                                    <div class="referral-message mt-2 small" style="display: none;"></div>
                                                 </div>
                                             </div>
                                         </div>
@@ -493,6 +703,90 @@
                     return 'legacy-free-consultation-' + Date.now();
                 }
 
+                // Helper function to format currency
+                function formatCurrency(value) {
+                    return new Intl.NumberFormat('id-ID', {
+                        style: 'currency',
+                        currency: 'IDR',
+                        minimumFractionDigits: 0
+                    }).format(value).replace('IDR', 'Rp.');
+                }
+
+                // =================================== --}}
+                // (MODIFIKASI) HELPER KALKULASI JAM --}}
+                // =================================== --}}
+                function calculateEndTime(startTime, baseDuration, additionalHours) {
+                    if (!startTime) {
+                        return ""; // No start time, no end time
+                    }
+
+                    try {
+                        // Get total duration in minutes
+                        const totalHours = parseInt(baseDuration, 10) + parseInt(additionalHours, 10);
+                        const totalMinutes = totalHours * 60;
+
+                        // Parse start time
+                        const [hours, minutes] = startTime.split(':').map(Number);
+
+                        // Create a date object (date doesn't matter, only time)
+                        const date = new Date();
+                        date.setHours(hours, minutes, 0, 0); // Set start time
+
+                        // Add duration
+                        date.setMinutes(date.getMinutes() + totalMinutes);
+
+                        // Format as HH:mm
+                        const endHours = String(date.getHours()).padStart(2, '0');
+                        const endMinutes = String(date.getMinutes()).padStart(2, '0');
+
+                        return `${endHours}:${endMinutes}`;
+
+                    } catch (e) {
+                        console.error("Error calculating end time:", e);
+                        return ""; // Return empty on error
+                    }
+                }
+
+                // =================================== --}}
+                // LOGIKA HARGA (berdasarkan durasi tambahan) --}}
+                // =================================== --}}
+                function updateServicePrice(block) {
+                    const priceElement = block.find('.final-price');
+
+                    // 1. Ambil data harga dari atribut data-*
+                    const basePrice = parseFloat(block.data('base-price')); // Harga dasar (fixed)
+                    const hourlyPrice = parseFloat(block.data('hourly-price')); // Harga per jam TAMBAHAN
+
+                    if (isNaN(basePrice) || isNaN(hourlyPrice)) {
+                        return; // Konsultasi gratis
+                    }
+
+                    // 2. Hitung biaya durasi tambahan
+                    const additionalHours = parseInt(block.find('.hours-input').val(), 10) || 0;
+                    let durationCost = 0;
+
+                    if (additionalHours > 0) {
+                        durationCost = additionalHours * hourlyPrice;
+                    }
+
+                    // 3. Hitung biaya add-on (layanan + painting)
+                    let totalAddonPrice = 0;
+                    block.find('.selected-addon-item').each(function() {
+                        const itemPrice = parseFloat($(this).data('price'));
+                        const qtyInput = $(this).find('.addon-quantity-input');
+                        let quantity = 1;
+
+                        if (qtyInput.length > 0) {
+                            quantity = parseInt(qtyInput.val(), 10) || 1;
+                        }
+                        totalAddonPrice += (itemPrice * quantity);
+                    });
+
+                    // 4. Kalkulasi harga final
+                    const finalPrice = basePrice + durationCost + totalAddonPrice;
+                    priceElement.text(formatCurrency(finalPrice));
+                }
+
                 // Free consultation type selection
                 $(document).on('change', '.consultation-type-radio', function() {
                     const typeId = $(this).val();
@@ -572,6 +866,7 @@
 
                 // Toggle offline address field based on session type for regular services
                 $('.accordion-body').on('change', '.session-type-select', function() {
+                    // (MODIFIKASI) Penyesuaian selector .find()
                     const container = $(this).closest('.service-block').find('.offline-address-container');
                     if ($(this).val() === 'Offline') {
                         container.slideDown();
@@ -582,8 +877,8 @@
                     }
                 });
 
-                // Validate form inputs and enable/disable button for regular services
-                $('.accordion-body').on('input change', '.service-date-picker, .booked_time-input, .hours-input, .session-type-select', function() {
+                // (MODIFIKASI) Event listener validasi
+                $('.accordion-body').on('input change', '.service-date-picker, .booked_time-input, .hours-input, .session-type-select, .offline-address-container textarea', function() {
                     const block = $(this).closest('.service-block');
                     const serviceId = block.data('service-id');
 
@@ -596,20 +891,146 @@
                     const sessionType = block.find('.session-type-select').val();
                     const offlineAddress = block.find('.offline-address-container textarea').val();
 
-                    let hoursBooked = 1;
+                    // (MODIFIKASI) Validasi berdasarkan 'min' 0
                     const hoursInput = block.find('.hours-input');
-                    if (hoursInput.length && !hoursInput.prop('readonly')) {
-                        hoursBooked = parseInt(hoursInput.val(), 10) || 1;
+                    let additionalHours = 0;
+                    let minHours = 0;
+
+                    if (hoursInput.length) {
+                        additionalHours = parseInt(hoursInput.val(), 10) || 0;
+                        minHours = parseInt(hoursInput.attr('min'), 10) || 0; // Akan menjadi 0
                     }
 
-                    let isValid = bookedDate && bookedTime && hoursBooked >= 1;
+                    let isValid = bookedDate && bookedTime && additionalHours >= minHours;
 
                     if (sessionType === 'Offline' && !offlineAddress.trim()) {
                         isValid = false;
                     }
 
+                    // =================================== --}}
+                    // (MODIFIKASI) PANGGIL KALKULASI JAM --}}
+                    // =================================== --}}
+                    const baseDuration = parseInt(block.data('base-duration'), 10) || 1;
+                    const endTime = calculateEndTime(bookedTime, baseDuration, additionalHours);
+                    block.find('.booked_time_end-input').val(endTime);
+                    // =================================== --}}
+
                     block.find('.select-service-btn').prop('disabled', !isValid);
+                    updateServicePrice(block); // Panggil update harga
                 });
+
+                // =================================== //
+                //  LOGIKA ADD-ON DROPDOWN (DENGAN QTY)  //
+                // =================================== //
+
+                // 1. Saat tombol "Tambah" di-klik
+                $(document).on('click', '.btn-add-addon', function() {
+                    const serviceId = $(this).data('service-id');
+                    const addonType = $(this).data('type'); // "service" atau "painting"
+                    const block = $(this).closest('.service-block');
+
+                    const dropdown = $('#' + addonType + '-addon-dropdown-' + serviceId);
+                    const container = $('#selected-' + addonType + '-addons-' + serviceId);
+
+                    const selectedOption = dropdown.find('option:selected');
+                    const addonId = selectedOption.val();
+                    const addonName = selectedOption.data('name');
+                    const addonPrice = selectedOption.data('price');
+
+                    if (!addonId) {
+                        return;
+                    }
+
+                    const priceFormatted = formatCurrency(addonPrice);
+
+                    if (addonType === 'painting') {
+                        const existingItem = container.find(`.selected-addon-item[data-addon-id="${addonId}"]`);
+                        if (existingItem.length > 0) {
+                            // Item sudah ada, tambah jumlahnya
+                            const qtyInput = existingItem.find('.addon-quantity-input');
+                            qtyInput.val((parseInt(qtyInput.val(), 10) || 1) + 1);
+                            qtyInput.trigger('input'); // Picu update harga
+                            dropdown.val('');
+                            return;
+                        }
+                    }
+
+                    let selectedItemHtml = '';
+
+                    if (addonType === 'painting') {
+                        // (MODIFIKASI) HTML untuk painting (dengan input jumlah DAN LABEL)
+                        selectedItemHtml = `
+                            <div class="selected-addon-item" data-addon-id="${addonId}" data-price="${addonPrice}" data-name="${addonName}">
+                                <div class="addon-details">
+                                    <span class="addon-name">${addonName}</span>
+                                    <span class="addon-price" data-unit-price="${addonPrice}">(+${priceFormatted})</span>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    {{-- (MODIFIKASI) Label "Jumlah:" --}}
+                                    <span class="me-2 text-muted" style="font-size: 0.85rem;">Jumlah:</span>
+                                    <input type="number" class="form-control form-control-sm addon-quantity-input" value="1" min="1" style="width: 60px; text-align: center;">
+                                    <button class="btn-remove-addon" data-addon-id="${addonId}" data-service-id="${serviceId}" data-type="${addonType}">
+                                        &times;
+                                    </button>
+                                </div>
+                            </div>`;
+
+                    } else {
+                        // HTML LAMA untuk layanan
+                        selectedItemHtml = `
+                            <div class="selected-addon-item" data-addon-id="${addonId}" data-price="${addonPrice}" data-name="${addonName}">
+                                <div class="addon-details">
+                                    <span class="addon-name">${addonName}</span>
+                                    <span class="addon-price">(+${priceFormatted})</span>
+                                </div>
+                                <button class="btn-remove-addon" data-addon-id="${addonId}" data-service-id="${serviceId}" data-type="${addonType}">
+                                    &times;
+                                </button>
+                            </div>`;
+                        selectedOption.hide();
+                    }
+
+                    container.append(selectedItemHtml);
+                    dropdown.val('');
+                    updateServicePrice(block);
+                });
+
+                // 2. Saat input jumlah painting diubah
+                $(document).on('input change', '.addon-quantity-input', function() {
+                    const block = $(this).closest('.service-block');
+                    const item = $(this).closest('.selected-addon-item');
+                    const priceElement = item.find('.addon-price');
+                    const unitPrice = parseFloat(priceElement.data('unit-price'));
+                    let quantity = parseInt($(this).val(), 10) || 1;
+
+                    if (quantity < 1) {
+                        quantity = 1;
+                        $(this).val(1);
+                    }
+
+                    const itemTotalPrice = unitPrice * quantity;
+                    priceElement.text(`(+${formatCurrency(itemTotalPrice)})`);
+                    updateServicePrice(block);
+                });
+
+                // 3. Saat tombol "Remove" (X) di-klik
+                $(document).on('click', '.btn-remove-addon', function() {
+                    const serviceId = $(this).data('service-id');
+                    const addonId = $(this).data('addon-id');
+                    const addonType = $(this).data('type');
+                    const block = $(this).closest('.service-block');
+
+                    if (addonType !== 'painting') {
+                        $('#' + addonType + '-addon-dropdown-' + serviceId).find('option[value="' + addonId + '"]').show();
+                    }
+
+                    $(this).closest('.selected-addon-item').remove();
+                    updateServicePrice(block);
+                });
+                // =================================== //
+                //  AKHIR MODIFIKASI JS ADD-ON        //
+                // =================================== //
+
 
                 // Handle service selection/booking
                 $('.select-service-btn').on('click', function() {
@@ -618,29 +1039,24 @@
 
                     // Handle new free consultation system
                     if (serviceId === 'new-free-consultation') {
+                        // ... (Logika konsultasi gratis tidak berubah) ...
                         const selectedType = $('input[name="free_consultation_type"]:checked').val();
                         const selectedSchedule = $('input[name="free_consultation_schedule"]:checked').val();
                         const sessionType = $('#additional-form-section .session-type-select').val();
                         const offlineAddress = $('#additional-form-section .offline-address-container textarea').val();
                         const contactPreference = $('input[name="contact_preference-new-free-consultation"]:checked').val();
-
-                        // Get scheduled date and time from selected schedule
                         const selectedScheduleElement = $('input[name="free_consultation_schedule"]:checked');
                         const bookedDate = selectedScheduleElement.data('date');
                         const bookedTime = selectedScheduleElement.data('time');
-
                         if (!selectedType || !selectedSchedule) {
                             return Swal.fire(translations.info, 'Harap pilih jenis konsultasi dan jadwal.', 'info');
                         }
-
                         if (sessionType === 'Offline' && !offlineAddress?.trim()) {
                             return Swal.fire(translations.info, 'Harap masukkan alamat untuk sesi Offline.', 'info');
                         }
-
                         if (!contactPreference) {
                             return Swal.fire(translations.failure, translations.validation_fails, 'error');
                         }
-
                         const formData = {
                             consultation_type: 'free-consultation-new',
                             free_consultation_type_id: selectedType,
@@ -650,7 +1066,6 @@
                             contact_preference: contactPreference,
                             _token: '{{ csrf_token() }}'
                         };
-
                         @auth
                             $.ajax({
                                 url: '{{ route("front.cart.add") }}',
@@ -675,10 +1090,8 @@
                                 }
                             });
                         @else
-                            // For guests, save to localStorage with consistent key format
                             const tempCart = getTempCart();
                             const cartKey = generateFreeConsultationKey(selectedType, selectedSchedule);
-
                             tempCart[cartKey] = {
                                 consultation_type: 'free-consultation-new',
                                 free_consultation_type_id: selectedType,
@@ -688,12 +1101,10 @@
                                 contact_preference: contactPreference,
                                 booked_date: bookedDate,
                                 booked_time: bookedTime,
-                                hours: 1 // Free consultation is always 1 hour
+                                hours: 1
                             };
-
                             saveTempCart(tempCart);
                             updateCartCount();
-
                             // Reset form
                             $('.consultation-type-radio, .schedule-radio').prop('checked', false);
                             $('.consultation-type-dropdown').removeClass('selected');
@@ -702,7 +1113,6 @@
                             $('#additional-form-section .offline-address-container textarea').val('');
                             $('#additional-form-section .session-type-select').val('Online');
                             $('#additional-form-section .offline-address-container').hide();
-
                             Swal.fire({
                                 title: translations.success,
                                 text: "Konsultasi gratis berhasil ditambahkan ke keranjang!",
@@ -710,54 +1120,99 @@
                                 confirmButtonText: 'Lanjutkan',
                                 footer: '<a href="{{ route("login") }}">Login untuk melanjutkan proses booking.</a>'
                             });
-                        @endauth
-
+                        @endguest
                         return;
                     }
 
-                    // Handle regular services
+                    // =================================== --}}
+                    // (MODIFIKASI) PENANGANAN KIRIM DATA --}}
+                    // =================================== --}}
+
+                    // 1. Kumpulkan semua data
                     const sessionType = block.find('.session-type-select').val();
                     const offlineAddress = block.find('.offline-address-container textarea').val();
 
-                    const formData = {
+                    const selectedAddons = [];
+                    block.find('.selected-addon-item').each(function() {
+                        const qtyInput = $(this).find('.addon-quantity-input');
+                        let quantity = 1;
+                        if (qtyInput.length > 0) {
+                            quantity = parseInt(qtyInput.val(), 10) || 1;
+                        }
+                        selectedAddons.push({
+                            id: $(this).data('addon-id'),
+                            name: $(this).data('name'),
+                            price: $(this).data('price'),
+                            quantity: quantity
+                        });
+                    });
+
+                    // (MODIFIKASI) Hitung total jam
+                    const baseDuration = parseInt(block.data('base-duration'), 10) || 1;
+                    const additionalHours = parseInt(block.find('.hours-input').val(), 10) || 0;
+                    const totalHours = baseDuration + additionalHours;
+
+                    const booked_date = block.find('.service-date-picker').val();
+                    const booked_time = block.find('.booked_time-input').val();
+                    const contact_preference = block.find(`input[name="contact_preference-${serviceId}"]:checked`).val();
+                    const referral_input = block.find('.referral-code-input').val();
+                    const applyBtn = block.find('.apply-referral-btn');
+                    if (referral_input && referral_input.trim() !== "" && !applyBtn.hasClass('btn-success')) {
+                        return Swal.fire('Referral Code Belum Diterapkan', 'Harap klik "Apply" terlebih dahulu atau hapus kode jika tidak ingin menggunakannya.', 'warning');
+                    }
+                    const referral_code = applyBtn.hasClass('btn-success') ? referral_input : null;
+
+                    // 2. Validasi data
+                    if (!booked_date || !booked_time) {
+                        return Swal.fire(translations.info, 'Harap lengkapi Tanggal dan Jam Mulai.', 'info');
+                    }
+                    if (sessionType === 'Offline' && !offlineAddress?.trim()) {
+                        return Swal.fire(translations.info, 'Harap masukkan alamat untuk sesi Offline.', 'info');
+                    }
+                    if (!contact_preference) {
+                        return Swal.fire(translations.failure, 'Harap pilih preferensi kontak.', 'error');
+                    }
+
+                    // 3. Siapkan data untuk dikirim
+                    const finalData = {
                         id: serviceId,
-                        hours: block.find('.hours-input').val() || '1',
-                        booked_date: block.find('.service-date-picker').val(),
-                        booked_time: block.find('.booked_time-input').val(),
+                        hours: totalHours.toString(), // Kirim total jam
+                        booked_date: booked_date,
+                        booked_time: booked_time,
                         session_type: sessionType,
                         offline_address: sessionType === 'Offline' ? offlineAddress : null,
-                        contact_preference: block.find(`input[name="contact_preference-${serviceId}"]:checked`).val(),
-                        referral_code: block.find('.referral-code-input').val() || null,
+                        contact_preference: contact_preference,
+                        referral_code: referral_code,
+                        addons: selectedAddons,
                         _token: '{{ csrf_token() }}'
                     };
 
-                    if (!formData.booked_date || !formData.booked_time) {
-                        return Swal.fire(translations.info, 'Harap lengkapi Tanggal dan Jam Mulai.', 'info');
-                    }
-
-                    if (formData.session_type === 'Offline' && !formData.offline_address?.trim()) {
-                        return Swal.fire(translations.info, 'Harap masukkan alamat untuk sesi Offline.', 'info');
-                    }
-
-                    if (!formData.contact_preference) {
-                        return Swal.fire(translations.failure, translations.validation_fails, 'error');
-                    }
 
                     @auth
+                        // 4A. Kirim ke AJAX (Authenticated)
                         $.ajax({
                             url: '{{ route("front.cart.add") }}',
                             type: 'POST',
-                            data: formData,
+                            data: finalData, // Menggunakan finalData
                             success: (response) => {
                                 Swal.fire(translations.success, response.message, 'success').then(() => {
-                                    // Reset form
-                                    block.find('.service-date-picker, .booked_time-input').val('');
-                                    block.find('.hours-input').val('1');
+                                    // (MODIFIKASI) Reset form
+                                    block.find('.service-date-picker, .booked_time_input, .booked_time_end-input').val('');
+                                    block.find('.hours-input').val('0');
                                     block.find('.session-type-select').val('Online');
                                     block.find('.offline-address-container').hide();
                                     block.find('.offline-address-container textarea').val('');
-                                    block.find('.referral-code-input').val('');
+                                    // Reset referral code UI
+                                    block.find('.referral-code-input').val('').prop('readonly', false).removeClass('is-valid is-invalid');
+                                    block.find('.apply-referral-btn').text('Apply').removeClass('btn-success').addClass('btn-outline-primary');
+                                    block.find('.referral-message').hide().text('').removeClass('text-success text-danger');
                                     block.find('.select-service-btn').prop('disabled', true);
+                                    block.find('.selected-addons-container').empty();
+                                    block.find('.addon-dropdown option').show();
+                                    block.find('.addon-dropdown').val('');
+                                    const priceElement = block.find('.final-price');
+                                    const basePrice = parseFloat(block.data('base-price'));
+                                    priceElement.text(formatCurrency(basePrice));
                                     updateCartCount();
                                 });
                             },
@@ -767,29 +1222,32 @@
                             }
                         });
                     @else
-                        // For guests, save regular services to localStorage
+                        // 4B. Simpan ke LocalStorage (Guest)
                         const tempCart = getTempCart();
-                        tempCart[serviceId] = {
-                            id: serviceId,
-                            hours: formData.hours,
-                            booked_date: formData.booked_date,
-                            booked_time: formData.booked_time,
-                            session_type: formData.session_type,
-                            offline_address: formData.offline_address,
-                            contact_preference: formData.contact_preference,
-                            referral_code: formData.referral_code
-                        };
+                        // Hapus _token untuk localStorage
+                        delete finalData._token;
+                        tempCart[serviceId] = finalData;
+
                         saveTempCart(tempCart);
                         updateCartCount();
 
-                        // Reset form
-                        block.find('.service-date-picker, .booked_time-input').val('');
-                        block.find('.hours-input').val('1');
+                        // (MODIFIKASI) Reset form
+                        block.find('.service-date-picker, .booked_time_input, .booked_time_end-input').val('');
+                        block.find('.hours-input').val('0');
                         block.find('.session-type-select').val('Online');
                         block.find('.offline-address-container').hide();
                         block.find('.offline-address-container textarea').val('');
-                        block.find('.referral-code-input').val('');
+                        // Reset referral code UI
+                        block.find('.referral-code-input').val('').prop('readonly', false).removeClass('is-valid is-invalid');
+                        block.find('.apply-referral-btn').text('Apply').removeClass('btn-success').addClass('btn-outline-primary');
+                        block.find('.referral-message').hide().text('').removeClass('text-success text-danger');
                         block.find('.select-service-btn').prop('disabled', true);
+                        block.find('.selected-addons-container').empty();
+                        block.find('.addon-dropdown option').show();
+                        block.find('.addon-dropdown').val('');
+                        const priceElement = block.find('.final-price');
+                        const basePrice = parseFloat(block.data('base-price'));
+                        priceElement.text(formatCurrency(basePrice));
 
                         Swal.fire({
                             title: translations.success,
@@ -801,40 +1259,86 @@
                     @endauth
                 });
 
-                // Handle referral code application - Simple validation without AJAX
+                // Handle referral code application - With confirmation + AJAX validation
                 $('.apply-referral-btn').on('click', function() {
-                    const serviceId = $(this).data('service-id');
                     const block = $(this).closest('.service-block');
                     const referralCode = block.find('.referral-code-input').val().trim();
+                    const applyBtn = $(this);
+                    const messageDiv = block.find('.referral-message');
+                    const basePrice = parseFloat(block.find('.final-price').data('base-price')) || 0;
 
                     if (!referralCode) {
                         return Swal.fire(translations.info, 'Masukkan kode referral terlebih dahulu.', 'info');
                     }
 
-                    // For guest users, just show info message
-                    @guest
-                        Swal.fire(translations.info, 'Kode referral akan divalidasi saat checkout. Silakan login untuk melanjutkan.', 'info');
+                    // If already applied, do nothing (no Batal needed)
+                    if (applyBtn.hasClass('btn-success')) {
                         return;
-                    @endguest
+                    }
 
-                    // For authenticated users, just show confirmation
-                    @auth
-                        Swal.fire({
-                            title: translations.success,
-                            text: `Kode referral "${referralCode}" akan diterapkan saat checkout.`,
-                            icon: 'success',
-                            confirmButtonText: 'OK'
+                    // Show confirmation popup first
+                    Swal.fire({
+                        title: 'Terapkan Kode Referral?',
+                        html: `Apakah Anda yakin ingin menggunakan kode <strong>${referralCode}</strong>?`,
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'Ya, Terapkan',
+                        cancelButtonText: 'Batal'
+                    }).then((result) => {
+                        if (!result.isConfirmed) return;
+
+                        // Show loading state
+                        applyBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>');
+
+                        $.ajax({
+                            url: '{{ route("referral.validate") }}',
+                            type: 'POST',
+                            data: {
+                                _token: '{{ csrf_token() }}',
+                                code: referralCode,
+                                total_amount: basePrice
+                            },
+                            success: function(response) {
+                                applyBtn.prop('disabled', false).html('Apply');
+
+                                if (response.success) {
+                                    Swal.fire({
+                                        title: translations.success,
+                                        text: response.message,
+                                        icon: 'success',
+                                        confirmButtonText: 'OK'
+                                    });
+                                    applyBtn.text('Diterapkan ✓').addClass('btn-success').removeClass('btn-outline-primary');
+                                    block.find('.referral-code-input').prop('readonly', true).addClass('is-valid').removeClass('is-invalid');
+                                    messageDiv.text('Kode referral berhasil diterapkan! Diskon akan dihitung saat checkout.').addClass('text-success').removeClass('text-danger').show();
+                                } else {
+                                    Swal.fire(translations.failure, response.message, 'error');
+                                    block.find('.referral-code-input').addClass('is-invalid');
+                                    messageDiv.text(response.message).addClass('text-danger').removeClass('text-success').show();
+                                }
+                            },
+                            error: function(xhr) {
+                                applyBtn.prop('disabled', false).html('Apply');
+                                const msg = xhr.responseJSON?.message || 'Gagal memvalidasi kode referral.';
+                                Swal.fire(translations.failure, msg, 'error');
+                                block.find('.referral-code-input').addClass('is-invalid');
+                                messageDiv.text(msg).addClass('text-danger').removeClass('text-success').show();
+                            }
                         });
-
-                        // Change button text to indicate code is applied
-                        $(this).text('Diterapkan').addClass('btn-success').removeClass('btn-outline-primary');
-                        block.find('.referral-code-input').prop('readonly', true);
-                    @endauth
+                    });
                 });
 
-                // Initially disable all service buttons
+
+                // Logika inisialisasi tombol dan harga
                 $('.service-block').each(function() {
-                    $(this).find('.select-service-btn').prop('disabled', true);
+                    const serviceId = $(this).data('service-id');
+                    if(serviceId !== 'new-free-consultation') {
+                        // (MODIFIKASI) Memicu 'change' pada input jam (yang sekarang value=0)
+                        $(this).find('.hours-input').trigger('change');
+                    } else {
+                        // Nonaktifkan tombol free
+                        $(this).find('.select-service-btn').prop('disabled', true);
+                    }
                 });
 
                 // Initialize cart count on page load
